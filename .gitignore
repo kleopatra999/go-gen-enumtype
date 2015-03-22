@@ -23,4 +23,4 @@ _testmain.go
 *.test
 *.prof
 
-_testdata/foo_gen_enumtype.go
+_testdata/scm_gen_enumtype.go

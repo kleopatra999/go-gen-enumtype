@@ -47,5 +47,9 @@ test: testdeps
 codeshipsteps: check_for_codeship 
 	codeship steps
 
+testdata: install
+	go generate _testdata/scm.go
+	cat _testdata/scm_gen_enumtype.go
+
 clean:
 	go clean -i ./...
