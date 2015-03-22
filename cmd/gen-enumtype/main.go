@@ -8,6 +8,7 @@ import (
 	"go/token"
 	"html/template"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -331,7 +332,14 @@ func getGenData(pkg string, enumTypeToEnumValues map[string][]*EnumValue) *GenDa
 	}
 }
 
+type enumValuesById []*EnumValue
+
+func (this enumValuesById) Len() int           { return len(this) }
+func (this enumValuesById) Swap(i, j int)      { this[i], this[j] = this[j], this[i] }
+func (this enumValuesById) Less(i, j int) bool { return this[i].Id < this[j].Id }
+
 func getEnumType(name string, enumValues []*EnumValue) *EnumType {
+	sort.Sort(enumValuesById(enumValues))
 	return &EnumType{
 		Name:       name,
 		EnumValues: enumValues,
