@@ -1,14 +1,9 @@
 package foo
 
-//go:generate gen-enumtype --in_type=FooType
+//go:generate gen-enumtype
 
-var (
-	FooTypeOne FooType = 0
-	FooTypeTwo FooType = 1
-)
-
-type FooType uint
-
-func main() {
-
+// @gen-enumtype Foo
+var FooTypes = []string{
+	"foo0",
+	"foo1",
 }
