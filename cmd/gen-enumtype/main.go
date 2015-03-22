@@ -16,15 +16,16 @@ const (
 )
 
 var (
-	ErrNil                   = errors.New("gen-enumtype: nil")
-	ErrEmpty                 = errors.New("gen-enumtype: empty")
-	ErrStringEmpty           = errors.New("gen-enumtype: string empty")
-	ErrGofileMustBeSet       = errors.New("gen-enumtype: $GOFILE must be set")
-	ErrCannotParseAnnotation = errors.New("gen-enumtype: cannot parse annotation")
-	ErrExpectedOneSpec       = errors.New("gen-enumtype: expected one spec")
-	ErrExpectedTypeSpec      = errors.New("gen-enumtype: expected value spec")
-	ErrExpectedStructType    = errors.New("gen-enumtype: expected struct type")
-	ErrDuplicateAnnotation   = errors.New("gen-enumtype: duplicate annotation")
+	ErrNil                     = errors.New("gen-enumtype: nil")
+	ErrEmpty                   = errors.New("gen-enumtype: empty")
+	ErrStringEmpty             = errors.New("gen-enumtype: string empty")
+	ErrGofileMustBeSet         = errors.New("gen-enumtype: $GOFILE must be set")
+	ErrCannotParseAnnotation   = errors.New("gen-enumtype: cannot parse annotation")
+	ErrExpectedOneSpec         = errors.New("gen-enumtype: expected one spec")
+	ErrExpectedTypeSpec        = errors.New("gen-enumtype: expected value spec")
+	ErrExpectedStructType      = errors.New("gen-enumtype: expected struct type")
+	ErrDuplicateAnnotation     = errors.New("gen-enumtype: duplicate annotation")
+	ErrDuplicateAnnotationData = errors.New("gen-enumtype: duplicate annotation data")
 
 	debug = false
 )
@@ -227,11 +228,33 @@ func getEnumTypeToEnumValues(annotationToStructName map[annotation]string) (map[
 			},
 		)
 	}
-	return nil, nil
+	if err := validateEnumTypeToEnumValues(enumTypeToEnumValues); err != nil {
+		return nil, err
+	}
+	return enumTypeToEnumValues, nil
 }
 
 // TODO(pedge)
 func validateEnumTypeToEnumValues(enumTypeToEnumValues map[string][]*enumValue) error {
+	for _, enumValues := range enumTypeToEnumValues {
+		seenNames := make(map[string]bool)
+		seenIds := make(map[uint]bool)
+		seenStructNames := make(map[string]bool)
+		for _, enumValue := range enumValues {
+			if _, ok := seenNames[enumValue.name]; ok {
+				return ErrDuplicateAnnotationData
+			}
+			if _, ok := seenIds[enumValue.id]; ok {
+				return ErrDuplicateAnnotationData
+			}
+			if _, ok := seenStructNames[enumValue.structName]; ok {
+				return ErrDuplicateAnnotationData
+			}
+			seenNames[enumValue.name] = true
+			seenIds[enumValue.id] = true
+			seenStructNames[enumValue.structName] = true
+		}
+	}
 	return nil
 }
 
