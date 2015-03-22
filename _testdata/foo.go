@@ -1,6 +1,6 @@
 package main
 
-// go:generate stringer --enum_type=FooType
+// go:generate gen-enumtype --enum_type=FooType
 
 var (
 	FooTypeOne FooType = 0
