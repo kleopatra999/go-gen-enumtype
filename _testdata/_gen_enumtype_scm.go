@@ -14,16 +14,16 @@ var CheckoutOptionsTypeHg CheckoutOptionsType = 2
 var CheckoutOptionsTypeBitbucket CheckoutOptionsType = 3
 
 var checkoutOptionsTypeToString = map[CheckoutOptionsType]string{
-	CheckoutOptionsTypeGit:       "git",
-	CheckoutOptionsTypeGithub:    "github",
-	CheckoutOptionsTypeHg:        "hg",
+	CheckoutOptionsTypeGit: "git",
+	CheckoutOptionsTypeGithub: "github",
+	CheckoutOptionsTypeHg: "hg",
 	CheckoutOptionsTypeBitbucket: "bitbucket",
 }
 
 var stringToCheckoutOptionsType = map[string]CheckoutOptionsType{
-	"git":       CheckoutOptionsTypeGit,
-	"github":    CheckoutOptionsTypeGithub,
-	"hg":        CheckoutOptionsTypeHg,
+	"git": CheckoutOptionsTypeGit,
+	"github": CheckoutOptionsTypeGithub,
+	"hg": CheckoutOptionsTypeHg,
 	"bitbucket": CheckoutOptionsTypeBitbucket,
 }
 
@@ -46,7 +46,7 @@ func CheckoutOptionsTypeOf(s string) (CheckoutOptionsType, error) {
 
 func (this CheckoutOptionsType) String() string {
 	if int(this) < len(checkoutOptionsTypeToString) {
-		return checkoutOptionsTypeToString[this]
+		 return checkoutOptionsTypeToString[this]
 	}
 	panic(newErrorUnknownCheckoutOptionsType(this).Error())
 }

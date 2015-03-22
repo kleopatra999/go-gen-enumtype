@@ -29,7 +29,6 @@ var (
 	ErrExpectedStructType      = errors.New("gen-enumtype: expected struct type")
 	ErrDuplicateAnnotation     = errors.New("gen-enumtype: duplicate annotation")
 	ErrDuplicateAnnotationData = errors.New("gen-enumtype: duplicate annotation data")
-	ErrFileDoesNotEndInDotGo   = errors.New("gen-enumtype: file does not end in .go")
 
 	debug = false
 )
@@ -449,11 +448,7 @@ func getEnumType(name string, enumValues []*EnumValue) *EnumType {
 }
 
 func generateFromGenData(goFile string, genData *GenData) (retErr error) {
-	if !strings.HasSuffix(goFile, ".go") {
-		// lol
-		return ErrFileDoesNotEndInDotGo
-	}
-	outputFile := goFile[0:(len(goFile)-3)] + "_gen_enumtype.go"
+	outputFile := "_gen_enumtype_" + goFile
 	output, err := os.Create(outputFile)
 	if err != nil {
 		return err
