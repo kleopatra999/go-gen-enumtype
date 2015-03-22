@@ -123,6 +123,14 @@ func templateString() string {
 	s += "\treturn stringhelper.String(this)\n"
 	s += "}\n\n"
 	s += "{{end}}"
+	// Switch()
+	s += "func (this {{$enumType.Name}}) Switch(\n"
+	s += "{{range $enumValue := $enumType.EnumValues}}"
+	s += "\t{{$enumValue.StructName | lowerCaseFirstLetter}}Func func({{$enumValue.StructName | lowerCaseFirstLetter}} *{{$enumValue.StructName}}) error,\n"
+	s += "{{end}}"
+	s += ") error {\n"
+	s += "\treturn nil\n"
+	s += "}\n\n"
 	s += "{{end}}"
 	return s
 }
