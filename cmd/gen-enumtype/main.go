@@ -13,11 +13,11 @@ func generate(inType string) error {
 }
 
 func main() {
-	enumType := flag.String("enum_type", "", "the enum type")
+	inType := flag.String("in_type", "", "the in type")
 	flag.Parse()
 
-	checkTrue(*enumType != "", "must specify --enum_type")
-	checkError(generate(*enumType))
+	checkTrue(*inType != "", "must specify --in_type")
+	checkError(generate(*inType))
 	os.Exit(0)
 }
 
