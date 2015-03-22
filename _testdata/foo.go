@@ -1,9 +1,18 @@
-package foo
+package testdata
 
 //go:generate gen-enumtype
 
-// @gen-enumtype Foo
-var FooTypes = []string{
-	"foo0",
-	"foo1",
+// @gen-enumtype CheckoutOptions git 0
+type GitCheckoutOptions struct {
+	User       string
+	Repository string
+	Branch     string
+	CommitId   string
+}
+
+// @gen-enumtype CheckoutOptions bitbuckethg 1
+type BitbucketHgCheckoutOptions struct {
+	User        string
+	Repository  string
+	ChangesetId string
 }
