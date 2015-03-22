@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"html/template"
 	"os"
 	"strconv"
 	"strings"
@@ -26,9 +27,18 @@ var (
 	ErrExpectedStructType      = errors.New("gen-enumtype: expected struct type")
 	ErrDuplicateAnnotation     = errors.New("gen-enumtype: duplicate annotation")
 	ErrDuplicateAnnotationData = errors.New("gen-enumtype: duplicate annotation data")
+	ErrFileDoesNotEndInDotGo   = errors.New("gen-enumtype: file does not end in .go")
 
 	debug = false
 )
+
+func main() {
+	if err := generate(); err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		os.Exit(1)
+	}
+	os.Exit(0)
+}
 
 func generate() error {
 	goFile := os.Getenv("GOFILE")
@@ -47,10 +57,10 @@ func generateFromEnv(goFile string) error {
 	if err != nil {
 		return err
 	}
-	return generateFromAstFile(astFile)
+	return generateFromAstFile(goFile, astFile)
 }
 
-func generateFromAstFile(astFile *ast.File) error {
+func generateFromAstFile(goFile string, astFile *ast.File) error {
 	pkg, err := packageFromAstFile(astFile)
 	if err != nil {
 		return err
@@ -59,7 +69,7 @@ func generateFromAstFile(astFile *ast.File) error {
 	if err != nil {
 		return err
 	}
-	return generateFromPkgAndGenDecls(pkg, genDecls)
+	return generateFromGenDecls(goFile, pkg, genDecls)
 }
 
 func packageFromAstFile(astFile *ast.File) (string, error) {
@@ -87,12 +97,12 @@ func genDeclsFromAstFile(astFile *ast.File) ([]*ast.GenDecl, error) {
 	return genDecls, nil
 }
 
-func generateFromPkgAndGenDecls(pkg string, genDecls []*ast.GenDecl) error {
+func generateFromGenDecls(goFile string, pkg string, genDecls []*ast.GenDecl) error {
 	annotatedGenDecls, err := getAnnotatedGenDecls(genDecls)
 	if err != nil {
 		return err
 	}
-	return generateFromPkgAndAnnotatedGenDecls(pkg, annotatedGenDecls)
+	return generateFromAnnotatedGenDecls(goFile, pkg, annotatedGenDecls)
 }
 
 type annotation struct {
@@ -142,12 +152,12 @@ func parseAnnotation(text string) (annotation, error) {
 	return annotation{split[1], split[2], uint(id)}, nil
 }
 
-func generateFromPkgAndAnnotatedGenDecls(pkg string, annotatedGenDecls map[annotation]*ast.GenDecl) error {
+func generateFromAnnotatedGenDecls(goFile string, pkg string, annotatedGenDecls map[annotation]*ast.GenDecl) error {
 	annotatedTypeSpecs, err := getAnnotatedTypeSpecs(annotatedGenDecls)
 	if err != nil {
 		return err
 	}
-	return generateFromPkgAndAnnotatedTypeSpecs(pkg, annotatedTypeSpecs)
+	return generateFromAnnotatedTypeSpecs(goFile, pkg, annotatedTypeSpecs)
 }
 
 func getAnnotatedTypeSpecs(annotatedGenDecls map[annotation]*ast.GenDecl) (map[annotation]*ast.TypeSpec, error) {
@@ -168,12 +178,12 @@ func getAnnotatedTypeSpecs(annotatedGenDecls map[annotation]*ast.GenDecl) (map[a
 	return annotatedTypeSpecs, nil
 }
 
-func generateFromPkgAndAnnotatedTypeSpecs(pkg string, annotatedTypeSpecs map[annotation]*ast.TypeSpec) error {
+func generateFromAnnotatedTypeSpecs(goFile string, pkg string, annotatedTypeSpecs map[annotation]*ast.TypeSpec) error {
 	annotationToStructName, err := getAnnotationToStructName(annotatedTypeSpecs)
 	if err != nil {
 		return err
 	}
-	return generateFromPkgAndAnnotationToStructName(pkg, annotationToStructName)
+	return generateFromAnnotationToStructName(goFile, pkg, annotationToStructName)
 }
 
 func getAnnotationToStructName(annotatedTypeSpecs map[annotation]*ast.TypeSpec) (map[annotation]string, error) {
@@ -199,32 +209,32 @@ func getAnnotationToStructName(annotatedTypeSpecs map[annotation]*ast.TypeSpec) 
 	return annotationToStructName, nil
 }
 
-type enumValue struct {
-	name       string
-	id         uint
-	structName string
+type EnumValue struct {
+	Name       string
+	Id         uint
+	StructName string
 }
 
-func generateFromPkgAndAnnotationToStructName(pkg string, annotationToStructName map[annotation]string) error {
+func generateFromAnnotationToStructName(goFile string, pkg string, annotationToStructName map[annotation]string) error {
 	enumTypeToEnumValues, err := getEnumTypeToEnumValues(annotationToStructName)
 	if err != nil {
 		return err
 	}
-	return generateFromPkgAndEnumTypeToEnumValues(pkg, enumTypeToEnumValues)
+	return generateFromEnumTypeToEnumValues(goFile, pkg, enumTypeToEnumValues)
 }
 
-func getEnumTypeToEnumValues(annotationToStructName map[annotation]string) (map[string][]*enumValue, error) {
-	enumTypeToEnumValues := make(map[string][]*enumValue)
+func getEnumTypeToEnumValues(annotationToStructName map[annotation]string) (map[string][]*EnumValue, error) {
+	enumTypeToEnumValues := make(map[string][]*EnumValue)
 	for annotation, structName := range annotationToStructName {
 		if _, ok := enumTypeToEnumValues[annotation.enumType]; !ok {
-			enumTypeToEnumValues[annotation.enumType] = make([]*enumValue, 0)
+			enumTypeToEnumValues[annotation.enumType] = make([]*EnumValue, 0)
 		}
 		enumTypeToEnumValues[annotation.enumType] = append(
 			enumTypeToEnumValues[annotation.enumType],
-			&enumValue{
-				name:       annotation.enumValue,
-				id:         annotation.id,
-				structName: structName,
+			&EnumValue{
+				Name:       annotation.enumValue,
+				Id:         annotation.id,
+				StructName: structName,
 			},
 		)
 	}
@@ -235,45 +245,89 @@ func getEnumTypeToEnumValues(annotationToStructName map[annotation]string) (map[
 }
 
 // TODO(pedge)
-func validateEnumTypeToEnumValues(enumTypeToEnumValues map[string][]*enumValue) error {
+func validateEnumTypeToEnumValues(enumTypeToEnumValues map[string][]*EnumValue) error {
 	for _, enumValues := range enumTypeToEnumValues {
 		seenNames := make(map[string]bool)
 		seenIds := make(map[uint]bool)
 		seenStructNames := make(map[string]bool)
 		for _, enumValue := range enumValues {
-			if _, ok := seenNames[enumValue.name]; ok {
+			if _, ok := seenNames[enumValue.Name]; ok {
 				return ErrDuplicateAnnotationData
 			}
-			if _, ok := seenIds[enumValue.id]; ok {
+			if _, ok := seenIds[enumValue.Id]; ok {
 				return ErrDuplicateAnnotationData
 			}
-			if _, ok := seenStructNames[enumValue.structName]; ok {
+			if _, ok := seenStructNames[enumValue.StructName]; ok {
 				return ErrDuplicateAnnotationData
 			}
-			seenNames[enumValue.name] = true
-			seenIds[enumValue.id] = true
-			seenStructNames[enumValue.structName] = true
+			seenNames[enumValue.Name] = true
+			seenIds[enumValue.Id] = true
+			seenStructNames[enumValue.StructName] = true
 		}
 	}
 	return nil
 }
 
-func generateFromPkgAndEnumTypeToEnumValues(pkg string, enumTypeToEnumValues map[string][]*enumValue) error {
-	for enumType, enumValues := range enumTypeToEnumValues {
-		fmt.Println(enumType)
-		for _, enumValue := range enumValues {
-			fmt.Println(enumValue)
-		}
-	}
-	return nil
+type GenData struct {
+	Package   string
+	EnumTypes []*EnumType
 }
 
-// ***** MAIN *****
+type EnumType struct {
+	Name       string
+	EnumValues []*EnumValue
+}
 
-func main() {
-	if err := generate(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-		os.Exit(1)
+func generateFromEnumTypeToEnumValues(goFile string, pkg string, enumTypeToEnumValues map[string][]*EnumValue) error {
+	return generateFromGenData(goFile, getGenData(pkg, enumTypeToEnumValues))
+}
+
+func getGenData(pkg string, enumTypeToEnumValues map[string][]*EnumValue) *GenData {
+	enumTypes := make([]*EnumType, len(enumTypeToEnumValues))
+	i := 0
+	for enumTypeName, enumValues := range enumTypeToEnumValues {
+		enumTypes[i] = getEnumType(enumTypeName, enumValues)
+		i++
 	}
-	os.Exit(0)
+	return &GenData{
+		Package:   pkg,
+		EnumTypes: enumTypes,
+	}
+}
+
+func getEnumType(name string, enumValues []*EnumValue) *EnumType {
+	return &EnumType{
+		Name:       name,
+		EnumValues: enumValues,
+	}
+}
+
+var templateString = `
+package {{.Package}}
+
+{{range .EnumTypes}}
+type {{.Name}} uint
+{{end}}
+`
+
+func generateFromGenData(goFile string, genData *GenData) (retErr error) {
+	if !strings.HasSuffix(goFile, ".go") {
+		// lol
+		return ErrFileDoesNotEndInDotGo
+	}
+	outputFile := goFile[0:(len(goFile)-3)] + "_gen_enumtype.go"
+	output, err := os.Create(outputFile)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := output.Close(); err != nil && retErr == nil {
+			retErr = err
+		}
+	}()
+	template, err := template.New("template").Parse(strings.TrimSpace(templateString))
+	if err != nil {
+		return err
+	}
+	return template.Execute(output, genData)
 }
