@@ -12,4 +12,3 @@ import (
     "github.com/peter-edge/go-gen-enumtype"
 )
 ```
-

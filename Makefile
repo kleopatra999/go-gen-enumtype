@@ -1,6 +1,5 @@
 .PHONY: \
 	all \
-	precommit \
 	check_for_codeship \
 	deps \
 	updatedeps \
@@ -11,12 +10,9 @@
 	cov \
 	test \
 	codeshipsteps \
-	doc \
 	clean
 
 all: test install
-
-precommit: doc
 
 check_for_codeship:
 	@ if ! which codeship > /dev/null; then \
@@ -50,11 +46,6 @@ test: testdeps
 
 codeshipsteps: check_for_codeship 
 	codeship steps
-
-doc:
-	go get -v github.com/robertkrimen/godocdown/godocdown
-	cp .readme.header README.md
-	godocdown | tail -n +7 >> README.md
 
 clean:
 	go clean -i ./...
