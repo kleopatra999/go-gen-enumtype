@@ -73,6 +73,9 @@ func templateString() string {
 	s += "\t\t{{$enumType.Name}}Type{{$enumValue.Name | upperCaseFirstLetter}},\n"
 	s += "{{end}}"
 	s += "	}\n"
+	s += "}\n\n"
+	s += "func NewErrorUnknown{{$enumType.Name}}Type(value interface{}) {\n"
+	s += "\t return fmt.Errorf(\"{{.Package}}: Unknown{{$enumType.Name}}Type: %v\", value)\n"
 	s += "}\n"
 	s += "{{end}}"
 	return s
