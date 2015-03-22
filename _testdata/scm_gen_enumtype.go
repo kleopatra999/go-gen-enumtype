@@ -88,7 +88,7 @@ func (this *BitbucketCheckoutOptions) String() string {
 	return stringhelper.String(this)
 }
 
-func CheckoutOptionsConsumeSwitch(
+func CheckoutOptionsSwitch(
 	checkoutOptions CheckoutOptions,
 	gitCheckoutOptionsFunc func(gitCheckoutOptions *GitCheckoutOptions) error,
 	githubCheckoutOptionsFunc func(githubCheckoutOptions *GithubCheckoutOptions) error,
@@ -109,7 +109,7 @@ func CheckoutOptionsConsumeSwitch(
 	}
 }
 
-func (this CheckoutOptionsType) ProduceSwitch(
+func (this CheckoutOptionsType) NewCheckoutOptions(
 	gitCheckoutOptionsFunc func() (*GitCheckoutOptions, error),
 	githubCheckoutOptionsFunc func() (*GithubCheckoutOptions, error),
 	hgCheckoutOptionsFunc func() (*HgCheckoutOptions, error),
@@ -126,6 +126,46 @@ func (this CheckoutOptionsType) ProduceSwitch(
 		return bitbucketCheckoutOptionsFunc()
 	default:
 		return nil, newErrorUnknownCheckoutOptionsType(this)
+	}
+}
+
+func (this CheckoutOptionsType) Produce(
+	checkoutOptionsTypeGitFunc func() (interface{}, error),
+	checkoutOptionsTypeGithubFunc func() (interface{}, error),
+	checkoutOptionsTypeHgFunc func() (interface{}, error),
+	checkoutOptionsTypeBitbucketFunc func() (interface{}, error),
+) (interface{}, error) {
+	switch this {
+	case CheckoutOptionsTypeGit:
+		return checkoutOptionsTypeGitFunc()
+	case CheckoutOptionsTypeGithub:
+		return checkoutOptionsTypeGithubFunc()
+	case CheckoutOptionsTypeHg:
+		return checkoutOptionsTypeHgFunc()
+	case CheckoutOptionsTypeBitbucket:
+		return checkoutOptionsTypeBitbucketFunc()
+	default:
+		return nil, newErrorUnknownCheckoutOptionsType(this)
+	}
+}
+
+func (this CheckoutOptionsType) Handle(
+	checkoutOptionsTypeGitFunc func() error,
+	checkoutOptionsTypeGithubFunc func() error,
+	checkoutOptionsTypeHgFunc func() error,
+	checkoutOptionsTypeBitbucketFunc func() error,
+) error {
+	switch this {
+	case CheckoutOptionsTypeGit:
+		return checkoutOptionsTypeGitFunc()
+	case CheckoutOptionsTypeGithub:
+		return checkoutOptionsTypeGithubFunc()
+	case CheckoutOptionsTypeHg:
+		return checkoutOptionsTypeHgFunc()
+	case CheckoutOptionsTypeBitbucket:
+		return checkoutOptionsTypeBitbucketFunc()
+	default:
+		return newErrorUnknownCheckoutOptionsType(this)
 	}
 }
 
