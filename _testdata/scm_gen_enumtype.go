@@ -39,7 +39,7 @@ func AllCheckoutOptionsTypes() []CheckoutOptionsType {
 func CheckoutOptionsTypeOf(s string) (CheckoutOptionsType, error) {
 	checkoutOptionsType, ok := stringToCheckoutOptionsType[s]
 	if !ok {
-		return 0, NewErrorUnknownCheckoutOptionsType(s)
+		return 0, newErrorUnknownCheckoutOptionsType(s)
 	}
 	return checkoutOptionsType, nil
 }
@@ -48,11 +48,7 @@ func (this CheckoutOptionsType) String() string {
 	if int(this) < len(checkoutOptionsTypeToString) {
 		return checkoutOptionsTypeToString[this]
 	}
-	panic(NewErrorUnknownCheckoutOptionsType(this).Error())
-}
-
-func NewErrorUnknownCheckoutOptionsType(value interface{}) error {
-	return fmt.Errorf("scm: UnknownCheckoutOptionsType: %v", value)
+	panic(newErrorUnknownCheckoutOptionsType(this).Error())
 }
 
 type CheckoutOptions interface {
@@ -109,7 +105,7 @@ func CheckoutOptionsConsumeSwitch(
 	case CheckoutOptionsTypeBitbucket:
 		return bitbucketCheckoutOptionsFunc(checkoutOptions.(*BitbucketCheckoutOptions))
 	default:
-		return NewErrorUnknownCheckoutOptionsType(checkoutOptions.Type())
+		return newErrorUnknownCheckoutOptionsType(checkoutOptions.Type())
 	}
 }
 
@@ -129,6 +125,10 @@ func (this CheckoutOptionsType) ProduceSwitch(
 	case CheckoutOptionsTypeBitbucket:
 		return bitbucketCheckoutOptionsFunc()
 	default:
-		return nil, NewErrorUnknownCheckoutOptionsType(this)
+		return nil, newErrorUnknownCheckoutOptionsType(this)
 	}
+}
+
+func newErrorUnknownCheckoutOptionsType(value interface{}) error {
+	return fmt.Errorf("scm: UnknownCheckoutOptionsType: %v", value)
 }

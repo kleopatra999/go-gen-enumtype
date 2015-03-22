@@ -91,7 +91,7 @@ func templateString() string {
 	s += "func {{$enumType.Name}}TypeOf(s string) ({{$enumType.Name}}Type, error) {\n"
 	s += "\t{{$enumType.Name | lowerCaseFirstLetter}}Type, ok := stringTo{{$enumType.Name}}Type[s]\n"
 	s += "\tif !ok {\n"
-	s += "\t\treturn 0, NewErrorUnknown{{$enumType.Name}}Type(s)\n"
+	s += "\t\treturn 0, newErrorUnknown{{$enumType.Name}}Type(s)\n"
 	s += "\t}\n"
 	s += "\treturn {{$enumType.Name | lowerCaseFirstLetter}}Type, nil\n"
 	s += "}\n\n"
@@ -100,11 +100,7 @@ func templateString() string {
 	s += "\tif int(this) < len({{$enumType.Name | lowerCaseFirstLetter}}TypeToString) {\n"
 	s += "\t\t return {{$enumType.Name | lowerCaseFirstLetter}}TypeToString[this]\n"
 	s += "\t}\n"
-	s += "\tpanic(NewErrorUnknown{{$enumType.Name}}Type(this).Error())\n"
-	s += "}\n\n"
-	// error
-	s += "func NewErrorUnknown{{$enumType.Name}}Type(value interface{}) error {\n"
-	s += "\t return fmt.Errorf(\"{{$package}}: Unknown{{$enumType.Name}}Type: %v\", value)\n"
+	s += "\tpanic(newErrorUnknown{{$enumType.Name}}Type(this).Error())\n"
 	s += "}\n\n"
 	// interface declaration
 	s += "type {{$enumType.Name}} interface {\n"
@@ -136,7 +132,7 @@ func templateString() string {
 	s += "\t\treturn {{$enumValue.StructName | lowerCaseFirstLetter}}Func({{$enumType.Name | lowerCaseFirstLetter}}.(*{{$enumValue.StructName}}))\n"
 	s += "{{end}}"
 	s += "\tdefault:\n"
-	s += "\t\treturn NewErrorUnknown{{$enumType.Name}}Type({{$enumType.Name | lowerCaseFirstLetter}}.Type())\n"
+	s += "\t\treturn newErrorUnknown{{$enumType.Name}}Type({{$enumType.Name | lowerCaseFirstLetter}}.Type())\n"
 	s += "\t}\n"
 	s += "}\n\n"
 	// ProduceSwitch()
@@ -151,8 +147,12 @@ func templateString() string {
 	s += "\t\treturn {{$enumValue.StructName | lowerCaseFirstLetter}}Func()\n"
 	s += "{{end}}"
 	s += "\tdefault:\n"
-	s += "\t\treturn nil, NewErrorUnknown{{$enumType.Name}}Type(this)\n"
+	s += "\t\treturn nil, newErrorUnknown{{$enumType.Name}}Type(this)\n"
 	s += "\t}\n"
+	s += "}\n\n"
+	// error
+	s += "func newErrorUnknown{{$enumType.Name}}Type(value interface{}) error {\n"
+	s += "\treturn fmt.Errorf(\"{{$package}}: Unknown{{$enumType.Name}}Type: %v\", value)\n"
 	s += "}\n"
 	s += "{{end}}"
 	return s
