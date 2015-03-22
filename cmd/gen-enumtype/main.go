@@ -49,22 +49,29 @@ type EnumValue struct {
 	StructName string
 }
 
-var templateString = `
-package {{.Package}}
-
-{{range $enumType := .EnumTypes}}type {{$enumType.Name}}Type uint
-
-{{range $enumValue := $enumType.EnumValues}}var {{$enumType.Name}}Type{{$enumValue.Name | upperCaseFirstLetter}} {{$enumType.Name}} = {{$enumValue.Id}}
-{{end}}
-func All{{$enumType.Name}}Types() []{{$enumType.Name}}Type {
-	return []{{$enumType.Name}}Type{
-{{range $enumValue := $enumType.EnumValues}}		{{$enumType.Name}}Type{{$enumValue.Name | upperCaseFirstLetter}},
-{{end}}
-	}
+func templateString() string {
+	s := ""
+	s += "package {{.Package}}\n\n"
+	s += "{{range $enumType := .EnumTypes}}"
+	s += "type {{$enumType.Name}}Type uint\n\n"
+	s += "{{range $enumValue := $enumType.EnumValues}}"
+	s += "var {{$enumType.Name}}Type{{$enumValue.Name | upperCaseFirstLetter}} {{$enumType.Name}} = {{$enumValue.Id}}\n"
+	s += "{{end}}\n"
+	s += "var {{$enumType.Name | lowerCaseFirstLetter}}TypeToString = map[{{$enumType.Name}}Type]string{\n"
+	s += "{{range $enumValue := $enumType.EnumValues}}"
+	s += "	 {{$enumType.Name}}Type{{$enumValue.Name | upperCaseFirstLetter}}: \"{{$enumValue.Name}}\",\n"
+	s += "{{end}}"
+	s += "}\n\n"
+	s += "func All{{$enumType.Name}}Types() []{{$enumType.Name}}Type {\n"
+	s += "	return []{{$enumType.Name}}Type{\n"
+	s += "{{range $enumValue := $enumType.EnumValues}}"
+	s += "		{{$enumType.Name}}Type{{$enumValue.Name | upperCaseFirstLetter}},\n"
+	s += "{{end}}"
+	s += "	}\n"
+	s += "}\n"
+	s += "{{end}}"
+	return s
 }
-{{end}}
-`
-
 func main() {
 	if err := generate(); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
@@ -341,7 +348,7 @@ func generateFromGenData(goFile string, genData *GenData) (retErr error) {
 			"upperCaseFirstLetter": upperCaseFirstLetter,
 		},
 	)
-	if _, err := template.Parse(strings.TrimSpace(templateString)); err != nil {
+	if _, err := template.Parse(templateString()); err != nil {
 		return err
 	}
 	return template.Execute(output, genData)
