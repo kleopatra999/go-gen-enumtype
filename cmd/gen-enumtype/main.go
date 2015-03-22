@@ -52,6 +52,7 @@ type EnumValue struct {
 func templateString() string {
 	s := "{{$package := .Package}}"
 	s += "package {{$package}}\n\n"
+	s += "import \"fmt\"\n\n"
 	s += "{{range $enumType := .EnumTypes}}"
 	s += "type {{$enumType.Name}}Type uint\n\n"
 	s += "{{range $enumValue := $enumType.EnumValues}}"
@@ -76,6 +77,9 @@ func templateString() string {
 	s += "}\n\n"
 	s += "func NewErrorUnknown{{$enumType.Name}}Type(value interface{}) {\n"
 	s += "\t return fmt.Errorf(\"{{$package}}: Unknown{{$enumType.Name}}Type: %v\", value)\n"
+	s += "}\n\n"
+	s += "type {{$enumType.Name}} interface {\n"
+	s += "\t Type() {{$enumType.Name}}Type\n"
 	s += "}\n"
 	s += "{{end}}"
 	return s
