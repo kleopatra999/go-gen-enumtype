@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 const (
@@ -50,8 +51,17 @@ type EnumValue struct {
 
 var templateString = `
 package {{.Package}}
-{{range .EnumTypes}}
-type {{.Name}} uint
+
+{{range $enumType := .EnumTypes}}type {{$enumType.Name}}Type uint
+
+{{range $enumValue := $enumType.EnumValues}}var {{$enumType.Name}}Type{{$enumValue.Name | upperCaseFirstLetter}} {{$enumType.Name}} = {{$enumValue.Id}}
+{{end}}
+func All{{$enumType.Name}}Types() []{{$enumType.Name}}Type {
+	return []{{$enumType.Name}}Type{
+{{range $enumValue := $enumType.EnumValues}}		{{$enumType.Name}}Type{{$enumValue.Name | upperCaseFirstLetter}},
+{{end}}
+	}
+}
 {{end}}
 `
 
@@ -325,8 +335,26 @@ func generateFromGenData(goFile string, genData *GenData) (retErr error) {
 		}
 	}()
 	template := template.New("root")
+	template.Funcs(
+		map[string]interface{}{
+			"lowerCaseFirstLetter": lowerCaseFirstLetter,
+			"upperCaseFirstLetter": upperCaseFirstLetter,
+		},
+	)
 	if _, err := template.Parse(strings.TrimSpace(templateString)); err != nil {
 		return err
 	}
 	return template.Execute(output, genData)
+}
+
+func lowerCaseFirstLetter(s string) string {
+	a := []rune(s)
+	a[0] = unicode.ToLower(a[0])
+	return string(a)
+}
+
+func upperCaseFirstLetter(s string) string {
+	a := []rune(s)
+	a[0] = unicode.ToUpper(a[0])
+	return string(a)
 }
