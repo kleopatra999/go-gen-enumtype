@@ -448,7 +448,7 @@ func getEnumType(name string, enumValues []*EnumValue) *EnumType {
 }
 
 func generateFromGenData(goFile string, genData *GenData) (retErr error) {
-	outputFile := "_gen_enumtype_" + goFile
+	outputFile := "gen_enumtype_" + goFile
 	output, err := os.Create(outputFile)
 	if err != nil {
 		return err

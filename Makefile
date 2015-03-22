@@ -49,7 +49,7 @@ codeshipsteps: check_for_codeship
 
 testdata: install
 	go generate _testdata/scm.go
-	cat _testdata/_gen_enumtype_scm.go
+	cat _testdata/gen_enumtype_scm.go
 
 clean:
 	go clean -i ./...
