@@ -32,12 +32,45 @@ var (
 	debug = false
 )
 
+type GenData struct {
+	Package   string
+	EnumTypes []*EnumType
+}
+
+type EnumType struct {
+	Name       string
+	EnumValues []*EnumValue
+}
+
+type EnumValue struct {
+	Name       string
+	Id         uint
+	StructName string
+}
+
+var templateString = `
+package {{.Package}}
+{{range .EnumTypes}}
+type {{.Name}} uint
+{{end}}
+`
+
 func main() {
 	if err := generate(); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		os.Exit(1)
 	}
 	os.Exit(0)
+}
+
+type annotation struct {
+	enumType  string
+	enumValue string
+	id        uint
+}
+
+func (this annotation) empty() bool {
+	return this.enumType == "" && this.enumValue == "" && this.id == 0
 }
 
 func generate() error {
@@ -103,16 +136,6 @@ func generateFromGenDecls(goFile string, pkg string, genDecls []*ast.GenDecl) er
 		return err
 	}
 	return generateFromAnnotatedGenDecls(goFile, pkg, annotatedGenDecls)
-}
-
-type annotation struct {
-	enumType  string
-	enumValue string
-	id        uint
-}
-
-func (this annotation) empty() bool {
-	return this.enumType == "" && this.enumValue == "" && this.id == 0
 }
 
 func getAnnotatedGenDecls(genDecls []*ast.GenDecl) (map[annotation]*ast.GenDecl, error) {
@@ -209,12 +232,6 @@ func getAnnotationToStructName(annotatedTypeSpecs map[annotation]*ast.TypeSpec) 
 	return annotationToStructName, nil
 }
 
-type EnumValue struct {
-	Name       string
-	Id         uint
-	StructName string
-}
-
 func generateFromAnnotationToStructName(goFile string, pkg string, annotationToStructName map[annotation]string) error {
 	enumTypeToEnumValues, err := getEnumTypeToEnumValues(annotationToStructName)
 	if err != nil {
@@ -268,16 +285,6 @@ func validateEnumTypeToEnumValues(enumTypeToEnumValues map[string][]*EnumValue) 
 	return nil
 }
 
-type GenData struct {
-	Package   string
-	EnumTypes []*EnumType
-}
-
-type EnumType struct {
-	Name       string
-	EnumValues []*EnumValue
-}
-
 func generateFromEnumTypeToEnumValues(goFile string, pkg string, enumTypeToEnumValues map[string][]*EnumValue) error {
 	return generateFromGenData(goFile, getGenData(pkg, enumTypeToEnumValues))
 }
@@ -302,14 +309,6 @@ func getEnumType(name string, enumValues []*EnumValue) *EnumType {
 	}
 }
 
-var templateString = `
-package {{.Package}}
-
-{{range .EnumTypes}}
-type {{.Name}} uint
-{{end}}
-`
-
 func generateFromGenData(goFile string, genData *GenData) (retErr error) {
 	if !strings.HasSuffix(goFile, ".go") {
 		// lol
@@ -325,8 +324,8 @@ func generateFromGenData(goFile string, genData *GenData) (retErr error) {
 			retErr = err
 		}
 	}()
-	template, err := template.New("template").Parse(strings.TrimSpace(templateString))
-	if err != nil {
+	template := template.New("root")
+	if _, err := template.Parse(strings.TrimSpace(templateString)); err != nil {
 		return err
 	}
 	return template.Execute(output, genData)
