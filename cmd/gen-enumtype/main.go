@@ -4,6 +4,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"go/parser"
+	"go/token"
 	"os"
 )
 
@@ -21,6 +23,11 @@ func generate(inType string) error {
 
 func generateFromEnv(inType string, goFile string, goPackage string) error {
 	fmt.Println(inType, goFile, goPackage)
+	astFile, err := parser.ParseFile(token.NewFileSet(), goFile, nil, 0)
+	if err != nil {
+		return err
+	}
+	fmt.Println(astFile.Scope)
 	return nil
 }
 
