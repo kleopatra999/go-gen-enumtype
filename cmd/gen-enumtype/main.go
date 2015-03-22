@@ -56,7 +56,10 @@ func templateString() string {
 	// package
 	s += "package {{$package}}\n\n"
 	// imports
-	s += "import \"fmt\"\n\n"
+	s += "import (\n"
+	s += "\t\"fmt\"\n\n"
+	s += "\t\"github.com/peter-edge/go-stringhelper\"\n"
+	s += ")\n\n"
 	s += "{{range $enumType := .EnumTypes}}"
 	// type declaration
 	s += "type {{$enumType.Name}}Type uint\n\n"
@@ -105,8 +108,21 @@ func templateString() string {
 	s += "}\n\n"
 	// interface declaration
 	s += "type {{$enumType.Name}} interface {\n"
-	s += "\t Type() {{$enumType.Name}}Type\n"
-	s += "}\n"
+	s += "\tfmt.Stringer\n"
+	s += "\tType() {{$enumType.Name}}Type\n"
+	s += "}\n\n"
+	// Type() functions
+	s += "{{range $enumValue := $enumType.EnumValues}}"
+	s += "func (this *{{$enumValue.StructName}}) Type() {{$enumType.Name}}Type {\n"
+	s += "\treturn {{$enumType.Name}}Type{{$enumValue.Name | upperCaseFirstLetter}}\n"
+	s += "}\n\n"
+	s += "{{end}}"
+	// String() functions
+	s += "{{range $enumValue := $enumType.EnumValues}}"
+	s += "func (this *{{$enumValue.StructName}}) String() string {\n"
+	s += "\treturn stringhelper.String(this)\n"
+	s += "}\n\n"
+	s += "{{end}}"
 	s += "{{end}}"
 	return s
 }
