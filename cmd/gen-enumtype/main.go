@@ -6,11 +6,11 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"html/template"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
+	"text/template"
 	"unicode"
 )
 
@@ -51,24 +51,32 @@ type EnumValue struct {
 }
 
 func templateString() string {
+	// definitions
 	s := "{{$package := .Package}}"
+	// package
 	s += "package {{$package}}\n\n"
+	// imports
 	s += "import \"fmt\"\n\n"
 	s += "{{range $enumType := .EnumTypes}}"
+	// type declaration
 	s += "type {{$enumType.Name}}Type uint\n\n"
+	// value declarations
 	s += "{{range $enumValue := $enumType.EnumValues}}"
-	s += "var {{$enumType.Name}}Type{{$enumValue.Name | upperCaseFirstLetter}} {{$enumType.Name}} = {{$enumValue.Id}}\n"
+	s += "var {{$enumType.Name}}Type{{$enumValue.Name | upperCaseFirstLetter}} {{$enumType.Name}}Type = {{$enumValue.Id}}\n"
 	s += "{{end}}\n"
+	// type to string map
 	s += "var {{$enumType.Name | lowerCaseFirstLetter}}TypeToString = map[{{$enumType.Name}}Type]string{\n"
 	s += "{{range $enumValue := $enumType.EnumValues}}"
 	s += "\t{{$enumType.Name}}Type{{$enumValue.Name | upperCaseFirstLetter}}: \"{{$enumValue.Name}}\",\n"
 	s += "{{end}}"
 	s += "}\n\n"
-	s += "var stringTo{{$enumType.Name}}Type = map[string][{{$enumType.Name}}Type]{\n"
+	// string to type map
+	s += "var stringTo{{$enumType.Name}}Type = map[string]{{$enumType.Name}}Type{\n"
 	s += "{{range $enumValue := $enumType.EnumValues}}"
 	s += "\t\"{{$enumValue.Name}}\": {{$enumType.Name}}Type{{$enumValue.Name | upperCaseFirstLetter}},\n"
 	s += "{{end}}"
 	s += "}\n\n"
+	// all types
 	s += "func All{{$enumType.Name}}Types() []{{$enumType.Name}}Type {\n"
 	s += "\treturn []{{$enumType.Name}}Type{\n"
 	s += "{{range $enumValue := $enumType.EnumValues}}"
@@ -76,6 +84,7 @@ func templateString() string {
 	s += "{{end}}"
 	s += "\t}\n"
 	s += "}\n\n"
+	// type of
 	s += "func {{$enumType.Name}}TypeOf(s string) ({{$enumType.Name}}Type, error) {\n"
 	s += "\t{{$enumType.Name | lowerCaseFirstLetter}}Type, ok := stringTo{{$enumType.Name}}Type[s]\n"
 	s += "\tif !ok {\n"
@@ -83,9 +92,18 @@ func templateString() string {
 	s += "\t}\n"
 	s += "\treturn {{$enumType.Name | lowerCaseFirstLetter}}Type, nil\n"
 	s += "}\n\n"
-	s += "func NewErrorUnknown{{$enumType.Name}}Type(value interface{}) {\n"
+	// string
+	s += "func (this {{$enumType.Name}}Type) String() string {\n"
+	s += "\tif int(this) < len({{$enumType.Name | lowerCaseFirstLetter}}TypeToString) {\n"
+	s += "\t\t return {{$enumType.Name | lowerCaseFirstLetter}}TypeToString[this]\n"
+	s += "\t}\n"
+	s += "\tpanic(NewErrorUnknown{{$enumType.Name}}Type(this).Error())\n"
+	s += "}\n\n"
+	// error
+	s += "func NewErrorUnknown{{$enumType.Name}}Type(value interface{}) error {\n"
 	s += "\t return fmt.Errorf(\"{{$package}}: Unknown{{$enumType.Name}}Type: %v\", value)\n"
 	s += "}\n\n"
+	// interface declaration
 	s += "type {{$enumType.Name}} interface {\n"
 	s += "\t Type() {{$enumType.Name}}Type\n"
 	s += "}\n"
