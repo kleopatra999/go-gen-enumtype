@@ -1,4 +1,4 @@
-package main
+package foo
 
 //go:generate gen-enumtype --in_type=FooType
 

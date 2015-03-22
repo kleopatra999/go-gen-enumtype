@@ -8,9 +8,23 @@ import (
 )
 
 func generate(inType string) error {
-	fmt.Println(inType)
+	goFile := os.Getenv("GOFILE")
+	if goFile == "" {
+		return errors.New("$GOFILE must be set")
+	}
+	goPackage := os.Getenv("GOPACKAGE")
+	if goPackage == "" {
+		return errors.New("$GOPACKAGE must be set")
+	}
+	return generateFromEnv(inType, goFile, goPackage)
+}
+
+func generateFromEnv(inType string, goFile string, goPackage string) error {
+	fmt.Println(inType, goFile, goPackage)
 	return nil
 }
+
+// ***** MAIN *****
 
 func main() {
 	inType := flag.String("in_type", "", "the in type")
