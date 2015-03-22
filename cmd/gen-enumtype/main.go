@@ -24,19 +24,10 @@ var (
 	ErrExpectedOneSpec       = errors.New("gen-enumtype: expected one spec")
 	ErrExpectedTypeSpec      = errors.New("gen-enumtype: expected value spec")
 	ErrExpectedStructType    = errors.New("gen-enumtype: expected struct type")
+	ErrDuplicateAnnotation   = errors.New("gen-enumtype: duplicate annotation")
 
 	debug = false
 )
-
-type annotation struct {
-	enumType  string
-	enumValue string
-	id        uint
-}
-
-func (this annotation) empty() bool {
-	return this.enumType == "" && this.enumValue == "" && this.id == 0
-}
 
 func generate() error {
 	goFile := os.Getenv("GOFILE")
@@ -101,6 +92,16 @@ func generateFromPkgAndGenDecls(pkg string, genDecls []*ast.GenDecl) error {
 		return err
 	}
 	return generateFromPkgAndAnnotatedGenDecls(pkg, annotatedGenDecls)
+}
+
+type annotation struct {
+	enumType  string
+	enumValue string
+	id        uint
+}
+
+func (this annotation) empty() bool {
+	return this.enumType == "" && this.enumValue == "" && this.id == 0
 }
 
 func getAnnotatedGenDecls(genDecls []*ast.GenDecl) (map[annotation]*ast.GenDecl, error) {
@@ -189,15 +190,57 @@ func getAnnotationToStructName(annotatedTypeSpecs map[annotation]*ast.TypeSpec) 
 		if typeSpec.Name.Name == "" {
 			return nil, ErrStringEmpty
 		}
+		if _, ok := annotationToStructName[annotation]; ok {
+			return nil, ErrDuplicateAnnotation
+		}
 		annotationToStructName[annotation] = typeSpec.Name.Name
 	}
 	return annotationToStructName, nil
 }
 
+type enumValue struct {
+	name       string
+	id         uint
+	structName string
+}
+
 func generateFromPkgAndAnnotationToStructName(pkg string, annotationToStructName map[annotation]string) error {
-	fmt.Println(pkg)
+	enumTypeToEnumValues, err := getEnumTypeToEnumValues(annotationToStructName)
+	if err != nil {
+		return err
+	}
+	return generateFromPkgAndEnumTypeToEnumValues(pkg, enumTypeToEnumValues)
+}
+
+func getEnumTypeToEnumValues(annotationToStructName map[annotation]string) (map[string][]*enumValue, error) {
+	enumTypeToEnumValues := make(map[string][]*enumValue)
 	for annotation, structName := range annotationToStructName {
-		fmt.Println(annotation, structName)
+		if _, ok := enumTypeToEnumValues[annotation.enumType]; !ok {
+			enumTypeToEnumValues[annotation.enumType] = make([]*enumValue, 0)
+		}
+		enumTypeToEnumValues[annotation.enumType] = append(
+			enumTypeToEnumValues[annotation.enumType],
+			&enumValue{
+				name:       annotation.enumValue,
+				id:         annotation.id,
+				structName: structName,
+			},
+		)
+	}
+	return nil, nil
+}
+
+// TODO(pedge)
+func validateEnumTypeToEnumValues(enumTypeToEnumValues map[string][]*enumValue) error {
+	return nil
+}
+
+func generateFromPkgAndEnumTypeToEnumValues(pkg string, enumTypeToEnumValues map[string][]*enumValue) error {
+	for enumType, enumValues := range enumTypeToEnumValues {
+		fmt.Println(enumType)
+		for _, enumValue := range enumValues {
+			fmt.Println(enumValue)
+		}
 	}
 	return nil
 }
