@@ -199,7 +199,7 @@ func generateFromParseResult(parseResult *annotatedstruct.ParseResult) error {
 	if err != nil {
 		return err
 	}
-	return common.WriteFileFromTemplateString(parseResult.File, fileSuffix, templateString(), getGenData(parseResult.Package, enumTypeToEnumValues))
+	return common.WriteFileFromTemplateString(parseResult.File, fileSuffix, templateString(), nil, getGenData(parseResult.Package, enumTypeToEnumValues))
 }
 
 func getEnumTypeToEnumValues(parseResult *annotatedstruct.ParseResult) (map[string][]*EnumValue, error) {
