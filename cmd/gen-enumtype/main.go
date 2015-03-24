@@ -204,8 +204,8 @@ func generateFromParseResult(parseResult *annotatedstruct.ParseResult) error {
 
 func getEnumTypeToEnumValues(parseResult *annotatedstruct.ParseResult) (map[string][]*EnumValue, error) {
 	enumTypeToEnumValues := make(map[string][]*EnumValue)
-	for annotation, structDescriptor := range parseResult.AnnotationToStructDescriptor {
-		split := strings.Split(annotation, " ")
+	for _, structDescriptor := range parseResult.StructDescriptors {
+		split := strings.Split(string(structDescriptor.Annotation), " ")
 		if len(split) != 4 {
 			return nil, ErrInvalidAnnotationData
 		}
