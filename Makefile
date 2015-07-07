@@ -1,34 +1,31 @@
 .PHONY: \
 	all \
-	check_for_codeship \
 	deps \
 	updatedeps \
 	testdeps \
 	updatetestdeps \
 	build \
 	install \
-	cov \
+	lint \
+	vet \
+	errcheck \
+	pretest \
 	test \
-	codeshipsteps \
+	cov \
 	clean
 
-all: test install
-
-check_for_codeship:
-	@ if ! which codeship > /dev/null; then \
-		echo "error: codeship not installed" >&2; \
-	  fi
+all: test
 
 deps:
-	go get -d -v ./...
+	go get -d -v -t ./...
 
 updatedeps:
 	go get -d -v -u -f ./...
 
-testdeps: deps
+testdeps:
 	go get -d -v -t ./...
 
-updatetestdeps: updatedeps
+updatetestdeps:
 	go get -d -v -t -u -f ./...
 
 build: deps
@@ -37,19 +34,27 @@ build: deps
 install: deps
 	go install ./...
 
-cov: testdeps
-	go get -v github.com/axw/gocov/gocov
-	gocov test | gocov report
+lint: testdeps
+	go get -v github.com/golang/lint/golint
+	golint ./.
+
+vet: testdeps
+	go get -v golang.org/x/tools/cmd/vet
+	go vet ./...
+
+errcheck: testdeps
+	go get -v github.com/kisielk/errcheck
+	errcheck ./...
+
+pretest: lint vet errcheck
 
 test: testdeps
 	go test -test.v ./...
 
-codeshipsteps: check_for_codeship 
-	codeship steps
-
-testdata: install
-	go generate _testdata/scm.go
-	cat _testdata/scm_gen_enumtype.go
+cov: testdeps
+	go get -v github.com/axw/gocov/gocov
+	go get golang.org/x/tools/cmd/cover
+	gocov test | gocov report
 
 clean:
 	go clean -i ./...

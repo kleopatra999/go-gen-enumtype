@@ -261,9 +261,9 @@ func getGenData(pkg string, enumTypeToEnumValues map[string][]*EnumValue) *GenDa
 
 type enumValuesById []*EnumValue
 
-func (this enumValuesById) Len() int           { return len(this) }
-func (this enumValuesById) Swap(i, j int)      { this[i], this[j] = this[j], this[i] }
-func (this enumValuesById) Less(i, j int) bool { return this[i].Id < this[j].Id }
+func (e enumValuesById) Len() int           { return len(e) }
+func (e enumValuesById) Swap(i, j int)      { e[i], e[j] = e[j], e[i] }
+func (e enumValuesById) Less(i, j int) bool { return e[i].Id < e[j].Id }
 
 func getEnumType(name string, enumValues []*EnumValue) *EnumType {
 	sort.Sort(enumValuesById(enumValues))
