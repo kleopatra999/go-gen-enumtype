@@ -17,7 +17,7 @@
 all: test
 
 deps:
-	go get -d -v -t ./...
+	go get -d -v ./...
 
 updatedeps:
 	go get -d -v -u -f ./...
@@ -48,7 +48,7 @@ errcheck: testdeps
 
 pretest: lint vet errcheck
 
-test: testdeps
+test: testdeps pretest
 	go test -test.v ./...
 
 cov: testdeps
